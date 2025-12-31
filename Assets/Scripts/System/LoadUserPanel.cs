@@ -1,0 +1,130 @@
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class LoadUserPanel : PanelSystem
+{
+    [SerializeField]
+    private Button _closeListButton;
+    [SerializeField]
+    private TMP_InputField _searchInputField;
+
+    [SerializeField]
+    private Button _clientPrefabs;
+    [SerializeField]
+    private RectTransform _clientContainer;
+
+    private Button newClientPrefab;
+    private float _height;
+    private Action loadTriggerCallback;
+    private Action<PanelSystem,string> sceneTriggerCallback;
+
+    private List<Button> clientButtonList = new List<Button>();
+    private List<Button> clientButtonPool = new List<Button>();
+    private List<ClientData> currentClientList = new List<ClientData>();
+
+    public void Init(Action loadTrigger, Action<PanelSystem,string> sceneTrigger)
+    {
+        _height = _clientPrefabs.GetComponent<RectTransform>().sizeDelta.y;
+        loadTriggerCallback = loadTrigger;
+        sceneTriggerCallback = sceneTrigger;
+    }
+
+    public override void Show()
+    {
+        base.Show();
+
+        if (loadTriggerCallback != null)
+            loadTriggerCallback();
+
+        _closeListButton.onClick.AddListener(() =>
+        {
+            if (sceneTriggerCallback != null)
+            {
+                sceneTriggerCallback(panelSystemList[0], null);
+            }
+        });
+    }
+
+    public void Show(List<ClientData> clientList)
+    {
+        _searchInputField.onValueChanged.AddListener(SearchList);
+
+        currentClientList = clientList;
+        Debug.Log(clientList.Count);
+        for (int i = 0; i < currentClientList.Count; i++)
+        {
+            int index = i;
+
+            if (clientButtonPool.Count > 0)
+            {
+                newClientPrefab = clientButtonPool[0];
+                clientButtonPool.RemoveAt(0);
+                newClientPrefab.gameObject.SetActive(true);
+                newClientPrefab.transform.SetParent(_clientContainer, false);
+            }
+            else
+            {
+                newClientPrefab = Instantiate(_clientPrefabs, _clientContainer);
+            }
+
+            newClientPrefab.GetComponentInChildren<TMP_Text>().text = currentClientList[i].Name;
+            newClientPrefab.onClick.AddListener(() => LoadClientData(index));
+
+            clientButtonList.Add(newClientPrefab);
+        }
+        _clientContainer.sizeDelta = new Vector2(_clientContainer.sizeDelta.x, clientButtonList.Count * (_height + 5) + 40);
+    }
+
+    public override void Hide()
+    {
+        base.Hide();
+
+        for (int i = 0; i < clientButtonList.Count; i++)
+        {
+            clientButtonList[i].onClick.RemoveAllListeners();
+            clientButtonList[i].gameObject.SetActive(false);
+        }
+        clientButtonPool.AddRange(clientButtonList);
+        clientButtonList.Clear();
+
+        _searchInputField.onValueChanged.RemoveAllListeners();
+        _closeListButton.onClick.RemoveAllListeners();
+    }
+
+    private void LoadClientData(int index)
+    {
+        if (sceneTriggerCallback != null)
+        {
+            var item = JsonConvert.SerializeObject(currentClientList[index]);
+            Debug.Log(item);
+            sceneTriggerCallback(panelSystemList[1], "1_" + item);
+        }
+    } 
+
+    /// <summary>
+    /// Filter client list by keyword
+    /// </summary>
+    /// <param name="keyword"></param>
+    private void SearchList(string keyword)
+    {
+        int matchCount = 0;
+
+        for (int i = 0; i < currentClientList.Count; i++)
+        {
+            if (currentClientList[i].Name.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                clientButtonList[i].gameObject.SetActive(true);
+                matchCount++;
+            }
+            else
+            {
+                clientButtonList[i].gameObject.SetActive(false);
+            }
+        }
+        _clientContainer.sizeDelta = new Vector2(_clientContainer.sizeDelta.x, matchCount * (_height + 5) + 40);
+    }
+}

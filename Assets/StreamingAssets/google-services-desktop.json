@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "83221407328",
+    "project_id": "physio-db-f2e11",
+    "storage_bucket": "physio-db-f2e11.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:83221407328:android:72ff00714b50e771bf4505",
+        "android_client_info": {
+          "package_name": "com.HavenXau.PhysioDb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7gIiVJniCtr-NlGWXeztJv7KovO1ea98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
