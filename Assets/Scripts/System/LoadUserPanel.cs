@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,26 +20,23 @@ public class LoadUserPanel : PanelSystem
 
     private Button newClientPrefab;
     private float _height;
-    private Action loadTriggerCallback;
     private Action<PanelSystem,string> sceneTriggerCallback;
 
     private List<Button> clientButtonList = new List<Button>();
     private List<Button> clientButtonPool = new List<Button>();
     private List<ClientData> currentClientList = new List<ClientData>();
 
-    public void Init(Action loadTrigger, Action<PanelSystem,string> sceneTrigger)
+    public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<PanelSystem,string> sceneTrigger)
     {
         _height = _clientPrefabs.GetComponent<RectTransform>().sizeDelta.y;
-        loadTriggerCallback = loadTrigger;
+
+        currentClientList = await loadTrigger();
         sceneTriggerCallback = sceneTrigger;
     }
 
     public override void Show()
     {
         base.Show();
-
-        if (loadTriggerCallback != null)
-            loadTriggerCallback();
 
         _closeListButton.onClick.AddListener(() =>
         {
@@ -47,14 +45,17 @@ public class LoadUserPanel : PanelSystem
                 sceneTriggerCallback(panelSystemList[0], null);
             }
         });
+
+        LoadClientList();
     }
 
-    public void Show(List<ClientData> clientList)
+    /// <summary>
+    /// load client list from data
+    /// </summary>
+    public void LoadClientList()
     {
         _searchInputField.onValueChanged.AddListener(SearchList);
 
-        currentClientList = clientList;
-        Debug.Log(clientList.Count);
         for (int i = 0; i < currentClientList.Count; i++)
         {
             int index = i;
@@ -95,6 +96,10 @@ public class LoadUserPanel : PanelSystem
         _closeListButton.onClick.RemoveAllListeners();
     }
 
+    /// <summary>
+    /// Pass selected client data to display panel
+    /// </summary>
+    /// <param name="index"></param>
     private void LoadClientData(int index)
     {
         if (sceneTriggerCallback != null)

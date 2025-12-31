@@ -1,6 +1,5 @@
 using Firebase.Firestore;
 using System;
-using UnityEngine;
 
 [FirestoreData,Serializable]
 public class ClientData
@@ -17,6 +16,9 @@ public class ClientData
     private string EmailAddress = "";
     private string ResidentialAddress = "";
     private Int32 Langauge = 0;
+    private string EmergencyName = "Emergency";
+    private int EmergencyNumber = 987654321;
+    private string EmergencyRelationship = "Friend";
 
     [FirestoreProperty]
     public string Name { get { return UserName; } set { UserName = value; } }
@@ -42,5 +44,23 @@ public class ClientData
     public string Address { get { return ResidentialAddress; } set { ResidentialAddress = value; } }
     [FirestoreProperty]
     public Int32 Language { get { return Langauge; } set { Langauge = value; } }
+    [FirestoreProperty]
+    public string EmergencyContactName { get { return EmergencyName; } set { EmergencyName = value; } }
+    [FirestoreProperty]
+    public int EmergencyContactNumber { get { return EmergencyNumber; } set { EmergencyNumber = value; } }
+    [FirestoreProperty]
+    public string EmergencyContactRelationship { get { return EmergencyRelationship; } set { EmergencyRelationship = value; } }
+}
 
+
+[FirestoreData, Serializable]
+public class AppointmentData
+{
+    private Timestamp AppointmentDate;
+    private string UserIC = "ABC1";
+
+    [FirestoreProperty]
+    public Timestamp Date { get { return AppointmentDate; } set { AppointmentDate = value; } }
+    [FirestoreProperty]
+    public string IC { get { return UserIC; } set { UserIC = value; } }
 }
