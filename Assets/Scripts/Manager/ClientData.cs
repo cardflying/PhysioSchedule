@@ -16,9 +16,11 @@ public class ClientData
     private string EmailAddress = "";
     private string ResidentialAddress = "";
     private Int32 Langauge = 0;
+    private Int32 UserCondition = 0;
     private string EmergencyName = "Emergency";
     private int EmergencyNumber = 987654321;
     private string EmergencyRelationship = "Friend";
+    private int UserSession = 0;
 
     [FirestoreProperty]
     public string Name { get { return UserName; } set { UserName = value; } }
@@ -45,6 +47,10 @@ public class ClientData
     [FirestoreProperty]
     public Int32 Language { get { return Langauge; } set { Langauge = value; } }
     [FirestoreProperty]
+    public Int32 Condition { get { return UserCondition; } set { UserCondition = value; } }
+    [FirestoreProperty]
+    public int Session { get { return UserSession; } set { UserSession = value; } }
+    [FirestoreProperty]
     public string EmergencyContactName { get { return EmergencyName; } set { EmergencyName = value; } }
     [FirestoreProperty]
     public int EmergencyContactNumber { get { return EmergencyNumber; } set { EmergencyNumber = value; } }
@@ -63,4 +69,10 @@ public class AppointmentData
     public Timestamp Date { get { return AppointmentDate; } set { AppointmentDate = value; } }
     [FirestoreProperty]
     public string IC { get { return UserIC; } set { UserIC = value; } }
+}
+
+public enum UserCondition
+{
+    MSK = 0,
+    NEURO
 }

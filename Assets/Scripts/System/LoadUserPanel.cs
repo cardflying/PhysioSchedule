@@ -14,16 +14,16 @@ public class LoadUserPanel : PanelSystem
     private TMP_InputField _searchInputField;
 
     [SerializeField]
-    private Button _clientPrefabs;
+    private ClientUI _clientPrefabs;
     [SerializeField]
     private RectTransform _clientContainer;
 
-    private Button newClientPrefab;
+    private ClientUI newClientPrefab;
     private float _height;
     private Action<PanelSystem,string> sceneTriggerCallback;
 
-    private List<Button> clientButtonList = new List<Button>();
-    private List<Button> clientButtonPool = new List<Button>();
+    private List<ClientUI> clientButtonList = new List<ClientUI>();
+    private List<ClientUI> clientButtonPool = new List<ClientUI>();
     private List<ClientData> currentClientList = new List<ClientData>();
 
     public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<PanelSystem,string> sceneTrigger)
@@ -64,7 +64,6 @@ public class LoadUserPanel : PanelSystem
             {
                 newClientPrefab = clientButtonPool[0];
                 clientButtonPool.RemoveAt(0);
-                newClientPrefab.gameObject.SetActive(true);
                 newClientPrefab.transform.SetParent(_clientContainer, false);
             }
             else
@@ -72,8 +71,7 @@ public class LoadUserPanel : PanelSystem
                 newClientPrefab = Instantiate(_clientPrefabs, _clientContainer);
             }
 
-            newClientPrefab.GetComponentInChildren<TMP_Text>().text = currentClientList[i].Name;
-            newClientPrefab.onClick.AddListener(() => LoadClientData(index));
+            newClientPrefab.Init(currentClientList[i], () => LoadClientData(index));
 
             clientButtonList.Add(newClientPrefab);
         }
@@ -86,8 +84,7 @@ public class LoadUserPanel : PanelSystem
 
         for (int i = 0; i < clientButtonList.Count; i++)
         {
-            clientButtonList[i].onClick.RemoveAllListeners();
-            clientButtonList[i].gameObject.SetActive(false);
+            clientButtonList[i].Disable();
         }
         clientButtonPool.AddRange(clientButtonList);
         clientButtonList.Clear();

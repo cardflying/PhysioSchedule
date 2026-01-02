@@ -45,6 +45,8 @@ public class DisplayUserInfoPanel : PanelSystem
     [SerializeField]
     private TMP_Dropdown _languageDropdown;
     [SerializeField]
+    private TMP_Dropdown _conditionDropdown;
+    [SerializeField]
     private TMP_InputField _emergencyNameInputField;
     [SerializeField]
     private TMP_InputField _emergencyRelationshipInputField;
@@ -118,6 +120,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _occupationInputField.onEndEdit.AddListener(ReceiveOccupation);
         _addressInputField.onEndEdit.AddListener(ReceiveAddress);
         _languageDropdown.onValueChanged.AddListener(ReceiveLanguage);
+        _conditionDropdown.onValueChanged.AddListener(ReceiveCondition);
         _emergencyNameInputField.onEndEdit.AddListener(ReceiveEmergencyName);
         _emergencyRelationshipInputField.onEndEdit.AddListener(ReceiveEmergencyRelationship);
         _emergencyContactInputField.onEndEdit.AddListener(ReceiveEmergencyContact);
@@ -142,6 +145,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _occupationInputField.onEndEdit.RemoveAllListeners();
         _addressInputField.onEndEdit.RemoveAllListeners();
         _languageDropdown.onValueChanged.RemoveAllListeners();
+        _conditionDropdown.onValueChanged.RemoveAllListeners();
         _dobCalendarButton.onClick.RemoveAllListeners();
 
         _calendar.dateTrigger -= DisplayDate;
@@ -168,6 +172,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _occupationInputField.text = _clientData.Job;
         _addressInputField.text = _clientData.Address;
         _languageDropdown.value = _clientData.Language;
+        _conditionDropdown.value = _clientData.Condition;
     }
 
     /// <summary>
@@ -274,6 +279,10 @@ public class DisplayUserInfoPanel : PanelSystem
     public void ReceiveLanguage(Int32 language)
     {
         _clientData.Language = language;
+    }
+    public void ReceiveCondition(Int32 condition)
+    {
+        _clientData.Condition = condition;
     }
     public void ReceiveEmergencyName(string name)
     {
