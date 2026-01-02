@@ -216,8 +216,9 @@ public class DisplayUserInfoPanel : PanelSystem
     /// <summary>
     /// Show the selected date on the date of birth button
     /// </summary>
+    /// <param name="dayObject"></param>
     /// <param name="date"></param>
-    private void DisplayDate(DateTime date)
+    private void DisplayDate(int dayObject, DateTime date)
     {
         string dateString = date.ToString("dd MMMM yyyy");
 

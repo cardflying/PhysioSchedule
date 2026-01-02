@@ -32,7 +32,7 @@ public class CalendarController : MonoBehaviour
     public TMP_Text _yearNumText;
     public TMP_Text _monthNumText;
 
-    public Button _item;
+    public CalendarDay _item;
     public RectTransform _itemContainer;
     public CanvasGroup _itemCanvasGroup;
 
@@ -41,7 +41,7 @@ public class CalendarController : MonoBehaviour
     public Color32 _highlightDateColor;
     public CalendarMode _calendarMode = CalendarMode.SelectHide;
 
-    public List<Button> _dateItems = new List<Button>();
+    public List<CalendarDay> _dateItems = new List<CalendarDay>();
     const int _totalDateNum = 43;
 
     private DateTime _dateTime;
@@ -49,15 +49,16 @@ public class CalendarController : MonoBehaviour
     private TMP_Text previousSelectDateText;
     private List<int> appointmentDayList = new List<int>();
 
-    public Action<DateTime> dateTrigger;
+    public Action<int, DateTime> dateTrigger;
     private Func<DateTime, UniTask<List<AppointmentData>>> getAppointmentTriggerCallback;
 
     public async UniTask init(Func<DateTime, UniTask<List<AppointmentData>>> getAppointmentTrigger)
     {
         for (int i = 0; i < _totalDateNum; i++)
         {
-            Button item = Instantiate(_item, _itemContainer);
+            CalendarDay item = Instantiate(_item, _itemContainer);
             item.name = "Item" + i.ToString();
+            item.Init();
 
             _dateItems.Add(item);
         }
@@ -81,7 +82,7 @@ public class CalendarController : MonoBehaviour
         if (getAppointmentTriggerCallback != null)
         {
             List<AppointmentData> appointmentDataList = await getAppointmentTriggerCallback(_dateTime);
-            Debug.Log("Appointments in month: " + appointmentDataList.Count);
+            //Debug.Log("Appointments in month: " + appointmentDataList.Count);
             appointmentDayList.Clear();
 
             for (int i = 0; i < appointmentDataList.Count; i++)
@@ -95,7 +96,7 @@ public class CalendarController : MonoBehaviour
             }
         }
 
-        bool matchToday = MatchTodayDate(_dateTime);
+        bool matchTodayMonthYear = MatchTodayMonthYear(_dateTime);
 
         DateTime firstDay = _dateTime.AddDays(-(_dateTime.Day - 1));
         int index = GetDays(firstDay.DayOfWeek);
@@ -105,48 +106,31 @@ public class CalendarController : MonoBehaviour
         {
             int dayIndex = i;
 
-            _dateItems[dayIndex].onClick.RemoveAllListeners();
-            TMP_Text label = _dateItems[dayIndex].GetComponentInChildren<TMP_Text>();
-            label.color = Color.black;
-            Image highlight = _dateItems[dayIndex].GetComponentInChildren<Image>();
-            CanvasGroup canvasGroup = _dateItems[dayIndex].GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 0;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+            _dateItems[dayIndex].Init();
 
             if (dayIndex >= index)
             {
                 DateTime thatDay = firstDay.AddDays(date);
 
-                if (matchToday && _dateTime.Day == dayIndex)
-                {
-                    label.color = _todayDateColor;
-                }
-                else
-                {
-                    label.color = Color.black;
-                }
+                _dateItems[dayIndex].ChangeTextColor(
+                    (matchTodayMonthYear && _dateTime.Day == date +1) ?
+                    _todayDateColor : Color.black);
 
-                if (appointmentDayList.Contains(thatDay.Day) && _calendarMode == CalendarMode.SelectShow)
-                {
-                    highlight.color = _highlightDateColor;
-                }
-                else
-                {
-                    highlight.color = Color.white;
-                }
+                _dateItems[dayIndex].ChangeHighlightColor(
+                    (appointmentDayList.Contains(thatDay.Day) &&
+                    _calendarMode == CalendarMode.SelectShow) ?
+                    _highlightDateColor : Color.white);
+                
 
                 if (thatDay.Month == firstDay.Month)
                 {
-                    canvasGroup.alpha = 1;
-                    canvasGroup.interactable = true;
-                    canvasGroup.blocksRaycasts = true;
+                    _dateItems[dayIndex].ShowDay(true);
 
                     int currentDay = date + 1;
                     DateTime currentDate = new DateTime(_dateTime.Year, _dateTime.Month, currentDay);
 
-                    _dateItems[dayIndex].onClick.AddListener(() => OnDateItemClick(dayIndex, currentDate));
-                    label.text = currentDay.ToString();
+                    _dateItems[dayIndex].EnableButton(() => OnDateItemClick(dayIndex, currentDate));
+                    _dateItems[dayIndex].InsertText(currentDay.ToString());
                     date++;
                 }
             }
@@ -247,6 +231,11 @@ public class CalendarController : MonoBehaviour
         _itemCanvasGroup.blocksRaycasts = false;
     }
 
+    /// <summary>
+    /// Based on CalendarMode, to show calendar
+    /// </summary>
+    /// <param name="dayObject"></param>
+    /// <param name="day"></param>
     public void OnDateItemClick(int dayObject, DateTime day)
     {
         switch (_calendarMode)
@@ -258,18 +247,23 @@ public class CalendarController : MonoBehaviour
                 if (currentSelectDateText != null)
                 {
                     previousSelectDateText = currentSelectDateText;
+                    previousSelectDateText.color = Color.black;
+
+                    if (currentSelectDateText.text == DateTime.Now.Day.ToString() && day.Month == DateTime.Now.Month && day.Year == DateTime.Now.Year)
+                    {
+                        previousSelectDateText.color = _todayDateColor;
+                    }
                 }
 
-                currentSelectDateText = _dateItems[dayObject].GetComponentInChildren<TMP_Text>();
-                currentSelectDateText.color = _selectDateColor;
+                currentSelectDateText = _dateItems[dayObject].ChangeTextColor(_selectDateColor);
                 break;
             default:
                 break;
         }
-
+        //Debug.Log(dayObject +" " + day);
         if (dateTrigger != null)
         {
-            dateTrigger(day);
+            dateTrigger(dayObject, day);
         }
     }
 
@@ -278,8 +272,20 @@ public class CalendarController : MonoBehaviour
     /// </summary>
     /// <param name="date"></param>
     /// <returns></returns>
-    private bool MatchTodayDate(DateTime date)
+    private bool MatchTodayMonthYear(DateTime date)
     {
         return date.Month == DateTime.Now.Month && date.Year == DateTime.Now.Year;
+    }
+
+    /// <summary>
+    /// Highlight selected day
+    /// </summary>
+    /// <param name="dayObject"></param>
+    public void HighlightSelectDay(int dayObject, bool highlight)
+    {
+        if (dayObject == -1)
+            return;
+
+        _dateItems[dayObject].ChangeHighlightColor((highlight == true)?_highlightDateColor:Color.white);
     }
 }

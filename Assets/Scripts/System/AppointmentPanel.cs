@@ -25,11 +25,11 @@ public class AppointmentPanel : PanelSystem
 
     private CalendarController _calendar;
     private DateTime _selectedDate;
+    private int _selectedDayObject;
     private Button _bookedClientButton;
-    private bool _selectedDateFlag = false;
 
     private List<ClientData> clientList = new List<ClientData>();
-    private List<AppointmentData> appointmentList = new List<AppointmentData>();
+    [HideInInspector] private List<AppointmentData> appointmentListOnDate = new List<AppointmentData>();
     private Dictionary<int,Button> timeButtonDic = new Dictionary<int, Button>();
     private Dictionary<int,Button> bookedClientButtonDic = new Dictionary<int,Button>();
     private List<Button> bookedClientButtonPoolList = new List<Button>();
@@ -73,6 +73,7 @@ public class AppointmentPanel : PanelSystem
             clientOption.text = clientList[i].Name + "(" + clientList[i].IC + ")";
             nameListDropdown.options.Add(clientOption);
         }
+        nameListDropdown.onValueChanged.AddListener(SelectClient);
 
         ShowTimeButton(true);
 
@@ -91,6 +92,7 @@ public class AppointmentPanel : PanelSystem
         nameListDropdown.captionText.text = "";
         _calendar.HideCalendar();
         _calendar.dateTrigger -= DisplayDate;
+        _selectedDayObject = -1; 
 
         ShowTimeButton(false);
 
@@ -102,6 +104,7 @@ public class AppointmentPanel : PanelSystem
         bookedClientButtonDic.Clear();
 
         _closeAppointmentButton.onClick.RemoveAllListeners();
+        nameListDropdown.onValueChanged.RemoveAllListeners();
     }
     
     /// <summary>
@@ -149,6 +152,10 @@ public class AppointmentPanel : PanelSystem
         {
             cancelAppointmentTriggerCallback(appointment);
         }
+        CheckAppointmentList(appointment, true);
+
+        if (appointmentListOnDate.Count < 1)
+            _calendar.HighlightSelectDay(_selectedDayObject, false);
 
         //Debug.Log("Cancelled appointment on: " + date );
         ShowTimeButton(true, appointment.Date.ToDateTime().ToLocalTime().Hour);
@@ -220,7 +227,7 @@ public class AppointmentPanel : PanelSystem
     /// <param name="time"></param>
     private void SummitAppointment(int time)
     {
-        if (nameListDropdown.captionText.text == "Select Client" || _selectedDateFlag == false)
+        if (nameListDropdown.captionText.text == "Select Client")
             return;
 
         appointmentData.IC = clientList[nameListDropdown.value].IC;
@@ -228,10 +235,16 @@ public class AppointmentPanel : PanelSystem
         DateTime newDateTime = _selectedDate;
         newDateTime = newDateTime.AddHours(time).ToUniversalTime();
         appointmentData.Date = Timestamp.FromDateTime(newDateTime);
-        ShowTimeButton(false,time);
-        
+        ShowTimeButton(false, time);
+
         CreateBookedAppointmentDate();
-        
+
+        if (appointmentListOnDate.Count == 0)
+        {
+            _calendar.HighlightSelectDay(_selectedDayObject, true);
+        }
+        CheckAppointmentList(appointmentData, false);
+
         if (bookAppointmentTriggerCallback != null)
         {
             bookAppointmentTriggerCallback(appointmentData);
@@ -241,8 +254,9 @@ public class AppointmentPanel : PanelSystem
     /// <summary>
     /// Displays available appointment times for a selected date.
     /// </summary>
+    /// <param name="dayObject"></param>
     /// <param name="date"></param>
-    private async void DisplayDate(DateTime date)
+    private async void DisplayDate(int dayObject, DateTime date)
     {
         if (string.IsNullOrEmpty(nameListDropdown.captionText.text))
         {
@@ -257,15 +271,15 @@ public class AppointmentPanel : PanelSystem
         RemoveBookedAppointmentDate();
         if (getAppointmentTriggerCallback != null)
         {
-            appointmentList = new List<AppointmentData>();
-            appointmentList = await getAppointmentTriggerCallback(newAppointment);
+            appointmentListOnDate = new List<AppointmentData>();
+            appointmentListOnDate = await getAppointmentTriggerCallback(newAppointment);
             ShowTimeButton(true);
 
-            for (int i = 0; i < appointmentList.Count; i++)
+            for (int i = 0; i < appointmentListOnDate.Count; i++)
             {
                 appointmentData = new AppointmentData();
-                appointmentData.IC = appointmentList[i].IC;
-                appointmentData.Date = appointmentList[i].Date;
+                appointmentData.IC = appointmentListOnDate[i].IC;
+                appointmentData.Date = appointmentListOnDate[i].Date;
                 ShowTimeButton(false, appointmentData.Date.ToDateTime().ToLocalTime().Hour);
 
                 CreateBookedAppointmentDate();
@@ -273,6 +287,41 @@ public class AppointmentPanel : PanelSystem
         }
 
         _selectedDate = date;
-        _selectedDateFlag = true;
+        _selectedDayObject = dayObject;
+    }
+
+    /// <summary>
+    /// Check appointmentListOnDate based on bool to add or remove AppointmentData
+    /// </summary>
+    /// <param name="appointment"></param>
+    /// <param name="remove"></param>
+    private void CheckAppointmentList(AppointmentData appointment, bool remove)
+    {
+        for (int i = 0; i < appointmentListOnDate.Count; i++)
+        {
+            if (appointmentListOnDate[i].IC == appointment.IC && appointmentListOnDate[i].Date.ToDateTime() == appointment.Date.ToDateTime())
+            {
+                if (remove)
+                {
+                    appointmentListOnDate.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+
+        if (remove == false)
+        {
+            appointmentListOnDate.Add(new AppointmentData { Date = appointment.Date, IC = appointment.IC});
+        }
+    }
+
+    /// <summary>
+    /// Select client based on the dropdown list
+    /// </summary>
+    /// <param name="index"></param>
+    private void SelectClient(int index)
+    {
+        nameListDropdown.captionText.text = nameListDropdown.options[index].text;
+        nameListDropdown.Select();
     }
 }

@@ -8,7 +8,7 @@ using UnityEngine;
 public class FirebaseSystem : MonoBehaviour
 {
     private FirebaseFirestore firestore;
-    private int appointmentIndex = -1;
+    private int appointmentIndex = 0;
 
     public async UniTask Init()
     {
@@ -126,10 +126,7 @@ public class FirebaseSystem : MonoBehaviour
     {
         try
         {
-            Query query = firestore.Collection("appointment_data");
-            
-            // 2. Save client data (auto ID)
-            DocumentReference docRef = firestore.Collection("appointment_data").Document((appointmentIndex++).ToString());
+            DocumentReference docRef = firestore.Collection("appointment_data").Document();
 
             await docRef.SetAsync(appointmentData);
 
@@ -159,10 +156,10 @@ public class FirebaseSystem : MonoBehaviour
             foreach (var doc in snapshot.Documents)
             {
                 AppointmentData data = doc.ConvertTo<AppointmentData>();
-                Debug.Log($"Deleting document {doc.Id} with IC: {data.IC} and date:{data.Date}");
+                //Debug.Log($"Deleting document {doc.Id} with IC: {data.IC} and date:{data.Date}");
 
                 await doc.Reference.DeleteAsync();
-                Debug.Log($"Deleted document {doc}");
+                //Debug.Log($"Deleted document {doc}");
             }
         }
         catch (System.Exception e)
@@ -245,5 +242,29 @@ public class FirebaseSystem : MonoBehaviour
         }
 
         return appointment;
+    }
+
+    /// <summary>
+    /// Copy collection from source to target for firestore
+    /// </summary>
+    /// <param name="sourceCollection"></param>
+    /// <param name="targetCollection"></param>
+    /// <returns></returns>
+    public async UniTask CopyCollection(string sourceCollection, string targetCollection)
+    {
+        QuerySnapshot snapshot =
+            await firestore.Collection(sourceCollection).GetSnapshotAsync();
+
+        WriteBatch batch = firestore.StartBatch();
+
+        foreach (DocumentSnapshot doc in snapshot.Documents)
+        {
+            DocumentReference targetDoc =
+                firestore.Collection(targetCollection).Document(doc.Id);
+
+            batch.Set(targetDoc, doc.ToDictionary());
+        }
+
+        await batch.CommitAsync();
     }
 }
