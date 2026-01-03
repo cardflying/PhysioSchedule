@@ -1,7 +1,6 @@
 using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,8 +9,6 @@ public class PricePanel : PanelSystem
     [SerializeField]
     private Button _closeButton;
     [SerializeField]
-    private TMP_Dropdown nameListDropdown;
-    [SerializeField]
     private PriceUI priceUI;
     [SerializeField]
     private RectTransform priceContainer;
@@ -19,17 +16,12 @@ public class PricePanel : PanelSystem
     private List<SessionPrice> sessionList = new List<SessionPrice>();
 
     private ClientData _updateClientData;
-    private int _selectClient;
-    private List<ClientData> clientList = new List<ClientData>();
 
     private Action<ClientData> editTriggerAction;
     private Action<PanelSystem, string> sceneTriggerCallback;
-    private Func<UniTask<List<ClientData>>> loadTriggerFunc;
 
-    public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<ClientData> editTrigger,
-                                Action<PanelSystem, string> sceneTrigger)
+    public async UniTask Init(Action<ClientData> editTrigger, Action<PanelSystem, string> sceneTrigger)
     {
-        loadTriggerFunc = loadTrigger;
         editTriggerAction = editTrigger;
         sceneTriggerCallback = sceneTrigger;
 
@@ -44,17 +36,20 @@ public class PricePanel : PanelSystem
         await UniTask.CompletedTask;
     }
 
+    public override void SetData(string data)
+    {
+        _updateClientData = DeserializeData(data);
+    }
+
     public override void Show()
     {
         base.Show();
-
-        LoadClient().Forget();
 
         _closeButton.onClick.AddListener(() =>
         {
             if (sceneTriggerCallback != null)
             {
-                sceneTriggerCallback(panelSystemList[0], null);
+                sceneTriggerCallback(panelSystemList[0], SerializeData(_updateClientData));
             }
         });
     }
@@ -62,40 +57,17 @@ public class PricePanel : PanelSystem
     public override void Hide()
     {
         base.Hide();
-        nameListDropdown.captionText.text = "";
-        nameListDropdown.onValueChanged.RemoveAllListeners();
-        nameListDropdown.options.Clear();
+        _updateClientData = null;
         _closeButton.onClick.RemoveAllListeners();
     }
 
     /// <summary>
-    /// Load client list into dropdpwn menu
+    /// Choose option and add session
     /// </summary>
-    /// <returns></returns>
-    private async UniTask LoadClient()
-    {
-        clientList = await loadTriggerFunc();
-        for (int i = 0; i < clientList.Count; i++)
-        {
-            TMP_Dropdown.OptionData clientOption = new TMP_Dropdown.OptionData();
-            clientOption.text = clientList[i].Name + "(" + clientList[i].IC + ")";
-            nameListDropdown.options.Add(clientOption);
-        }
-        nameListDropdown.onValueChanged.AddListener(SelectClient);
-    }
-
-    private void SelectClient(int index)
-    {
-        nameListDropdown.captionText.text = nameListDropdown.options[index].text;
-        nameListDropdown.Select();
-
-        _selectClient = index;
-    }
-
+    /// <param name="index"></param>
     private void SelectPrice(int index)
     {
-        _updateClientData = clientList[_selectClient];
-        _updateClientData.Session = sessionList[index].session;
+        _updateClientData.Session += sessionList[index].session;
 
         if (editTriggerAction != null)
         {

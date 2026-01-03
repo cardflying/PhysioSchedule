@@ -19,6 +19,8 @@ public class DisplayUserInfoPanel : PanelSystem
     private Button _closeButton;
     [SerializeField]
     private Button _editButton;
+    [SerializeField]
+    private Button _sessionButton;
 
     [SerializeField]
     private TMP_InputField _nameInputField;
@@ -79,7 +81,9 @@ public class DisplayUserInfoPanel : PanelSystem
         switch (_currentMode)
         {
             case Mode.register:
+                _summitButton.gameObject.SetActive(true);
                 _summitButton.onClick.AddListener(RegisterClient);
+                
                 _closeButton.onClick.AddListener(() =>
                 {
                     if (sceneTriggerAction != null)
@@ -90,8 +94,16 @@ public class DisplayUserInfoPanel : PanelSystem
                 break;
             case Mode.load:
                 DeserializeData(split[1]);
-
+                _editButton.gameObject.SetActive(true);
                 _editButton.onClick.AddListener(EditClient);
+                _sessionButton.gameObject.SetActive(true);
+                _sessionButton.onClick.AddListener(() =>
+                {
+                    if (sceneTriggerAction != null)
+                    {
+                        sceneTriggerAction(panelSystemList[2], split[1]);
+                    }
+                });
                 _closeButton.onClick.AddListener(() =>
                 {
                     if (sceneTriggerAction != null)
@@ -151,9 +163,14 @@ public class DisplayUserInfoPanel : PanelSystem
         _calendar.dateTrigger -= DisplayDate;
         _calendar.HideCalendar();
 
+        _sessionButton.gameObject.SetActive(false);
+        _summitButton.gameObject.SetActive(false);
+        _editButton.gameObject.SetActive(false);
+
         _summitButton.onClick.RemoveAllListeners();
         _closeButton.onClick.RemoveAllListeners();
         _editButton.onClick.RemoveAllListeners();
+        _sessionButton.onClick.RemoveAllListeners();
     }
 
     private void DeserializeData(string data)

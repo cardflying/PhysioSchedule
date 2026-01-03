@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using UnityEngine;
 
 public class PanelSystem : MonoBehaviour
@@ -29,5 +30,15 @@ public class PanelSystem : MonoBehaviour
     public virtual void SetData(string data)
     {
         
+    }
+
+    protected ClientData DeserializeData(string data)
+    {
+        return JsonConvert.DeserializeObject<ClientData>(data);
+    }
+
+    protected string SerializeData(ClientData data)
+    {
+        return JsonConvert.SerializeObject(data);
     }
 }

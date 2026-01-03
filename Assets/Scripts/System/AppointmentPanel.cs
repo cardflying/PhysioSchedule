@@ -66,7 +66,7 @@ public class AppointmentPanel : PanelSystem
     {
         base.Show();
 
-        _calendar.ShowCalendar(_calendarRectTransform.position, Vector3.one * 4.4f);
+        _calendar.ShowCalendar(_calendarRectTransform.position, Vector3.one * 4.3f);
         _calendar.dateTrigger += DisplayDate;
         _calendar._calendarMode = CalendarController.CalendarMode.SelectShow;
 

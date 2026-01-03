@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -107,7 +106,7 @@ public class LoadUserPanel : PanelSystem
     {
         if (sceneTriggerCallback != null)
         {
-            var item = JsonConvert.SerializeObject(currentClientList[index]);
+            var item = SerializeData(currentClientList[index]);
             Debug.Log(item);
             sceneTriggerCallback(panelSystemList[1], "1_" + item);
         }

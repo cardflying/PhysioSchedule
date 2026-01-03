@@ -10,6 +10,7 @@ public class ProgramSystem : MonoBehaviour
     public CalendarController _calendarController;
     public MainPanel _mainPanel;
     public PricePanel _pricePanel;
+    public SessionPanel _sessionPanel;
 
     private PanelSystem _currentPanel;
 
@@ -30,9 +31,10 @@ public class ProgramSystem : MonoBehaviour
                                     _firebaseSystem.GetAppointmentList,
                                     _calendarController,
                                     ChangePanel);
-        await _pricePanel.Init(_firebaseSystem.LoadClientDataFromCloud,
-                               (x) => _firebaseSystem.UpdateClientDataInCloud(x).Forget(),
+        await _pricePanel.Init((x) => _firebaseSystem.UpdateClientDataInCloud(x).Forget(),
                                ChangePanel);
+
+        await _sessionPanel.Init(ChangePanel);
 
         await UniTask.Delay(1000);
         //LoadClientData();
