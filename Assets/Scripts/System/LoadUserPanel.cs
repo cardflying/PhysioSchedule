@@ -26,12 +26,16 @@ public class LoadUserPanel : PanelSystem
     private List<ClientUI> clientButtonPool = new List<ClientUI>();
     private List<ClientData> currentClientList = new List<ClientData>();
 
+    private Func<UniTask<List<ClientData>>> loadTriggerFunc;
+
     public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<PanelSystem,string> sceneTrigger)
     {
         _height = _clientPrefabs.GetComponent<RectTransform>().sizeDelta.y;
 
-        currentClientList = await loadTrigger();
+        loadTriggerFunc = loadTrigger;
         sceneTriggerCallback = sceneTrigger;
+
+        await UniTask.CompletedTask;
     }
 
     public override void Show()
@@ -46,14 +50,16 @@ public class LoadUserPanel : PanelSystem
             }
         });
 
-        LoadClientList();
+        LoadClientList().Forget();
     }
 
     /// <summary>
     /// load client list from data
     /// </summary>
-    public void LoadClientList()
+    public async UniTask LoadClientList()
     {
+        currentClientList = await loadTriggerFunc();
+
         _searchInputField.onValueChanged.AddListener(SearchList);
 
         for (int i = 0; i < currentClientList.Count; i++)

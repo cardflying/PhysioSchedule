@@ -196,7 +196,7 @@ public class DisplayUserInfoPanel : PanelSystem
     /// </summary>
     private void EditClient()
     {
-        if (summitTriggerAction != null)
+        if (editTriggerAction != null)
         {
             editTriggerAction(_clientData);
         }

@@ -37,18 +37,19 @@ public class AppointmentPanel : PanelSystem
 
     private Action<AppointmentData> bookAppointmentTriggerCallback;
     private Action<AppointmentData> cancelAppointmentTriggerCallback;
-    private Func<AppointmentData, UniTask<List<AppointmentData>>> getAppointmentTriggerCallback;
+    private Func<AppointmentData, UniTask<List<AppointmentData>>> getAppointmentTriggerFunc;
     private Action<PanelSystem, string> sceneTriggerCallback;
+    private Func<UniTask<List<ClientData>>> loadTriggerFunc;
 
     public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<AppointmentData> bookAppointmentTrigger,
                               Action<AppointmentData> cancelAppointmentTrigger, Func<AppointmentData, UniTask<List<AppointmentData>>> getAppointmentTrigger, 
                               CalendarController calendar, Action<PanelSystem, string> sceneTrigger)
     {
-        clientList = await loadTrigger();
+        loadTriggerFunc = loadTrigger;
         _calendar = calendar;
         bookAppointmentTriggerCallback = bookAppointmentTrigger;
         cancelAppointmentTriggerCallback = cancelAppointmentTrigger;
-        getAppointmentTriggerCallback = getAppointmentTrigger;
+        getAppointmentTriggerFunc = getAppointmentTrigger;
         sceneTriggerCallback = sceneTrigger;
 
         for (int i = 10; i < 22; i++)
@@ -57,6 +58,8 @@ public class AppointmentPanel : PanelSystem
             newTimeButton.GetComponentInChildren<TMP_Text>().text = (i).ToString("D2") + ":00";
             timeButtonDic.Add(i,newTimeButton);
         }
+
+        await UniTask.CompletedTask;
     }
 
     public override void Show()
@@ -67,14 +70,8 @@ public class AppointmentPanel : PanelSystem
         _calendar.dateTrigger += DisplayDate;
         _calendar._calendarMode = CalendarController.CalendarMode.SelectShow;
 
-        for (int i = 0; i < clientList.Count; i++)
-        {
-            TMP_Dropdown.OptionData clientOption = new TMP_Dropdown.OptionData();
-            clientOption.text = clientList[i].Name + "(" + clientList[i].IC + ")";
-            nameListDropdown.options.Add(clientOption);
-        }
-        nameListDropdown.onValueChanged.AddListener(SelectClient);
-
+        LoadClientList().Forget();
+        
         ShowTimeButton(true);
 
         _closeAppointmentButton.onClick.AddListener(() =>
@@ -90,6 +87,7 @@ public class AppointmentPanel : PanelSystem
     {
         base.Hide();
         nameListDropdown.captionText.text = "";
+        nameListDropdown.options.Clear();
         _calendar.HideCalendar();
         _calendar.dateTrigger -= DisplayDate;
         _selectedDayObject = -1; 
@@ -105,6 +103,22 @@ public class AppointmentPanel : PanelSystem
 
         _closeAppointmentButton.onClick.RemoveAllListeners();
         nameListDropdown.onValueChanged.RemoveAllListeners();
+    }
+
+    /// <summary>
+    /// Load client List into dropdown menu
+    /// </summary>
+    /// <returns></returns>
+    private async UniTask LoadClientList()
+    {
+        clientList = await loadTriggerFunc();
+        for (int i = 0; i < clientList.Count; i++)
+        {
+            TMP_Dropdown.OptionData clientOption = new TMP_Dropdown.OptionData();
+            clientOption.text = clientList[i].Name + "(" + clientList[i].IC + ")";
+            nameListDropdown.options.Add(clientOption);
+        }
+        nameListDropdown.onValueChanged.AddListener(SelectClient);
     }
     
     /// <summary>
@@ -269,10 +283,10 @@ public class AppointmentPanel : PanelSystem
         //Debug.Log("Date" + newAppointment.Date + " " + date);
 
         RemoveBookedAppointmentDate();
-        if (getAppointmentTriggerCallback != null)
+        if (getAppointmentTriggerFunc != null)
         {
             appointmentListOnDate = new List<AppointmentData>();
-            appointmentListOnDate = await getAppointmentTriggerCallback(newAppointment);
+            appointmentListOnDate = await getAppointmentTriggerFunc(newAppointment);
             ShowTimeButton(true);
 
             for (int i = 0; i < appointmentListOnDate.Count; i++)
