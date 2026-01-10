@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PricePanel : PanelSystem
+public class PackagePanel : PanelSystem
 {
     [SerializeField]
     private Button _closeButton;

@@ -9,8 +9,9 @@ public class ProgramSystem : MonoBehaviour
     public FirebaseSystem _firebaseSystem;
     public CalendarController _calendarController;
     public MainPanel _mainPanel;
-    public PricePanel _pricePanel;
+    public PackagePanel _pricePanel;
     public SessionPanel _sessionPanel;
+    public NotePanel _notePanel;
 
     private PanelSystem _currentPanel;
 
@@ -35,6 +36,7 @@ public class ProgramSystem : MonoBehaviour
                                ChangePanel);
 
         await _sessionPanel.Init(ChangePanel);
+        await _notePanel.Init(ChangePanel);
 
         await UniTask.Delay(1000);
         //LoadClientData();

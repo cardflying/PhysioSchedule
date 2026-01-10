@@ -8,7 +8,6 @@ using UnityEngine;
 public class FirebaseSystem : MonoBehaviour
 {
     private FirebaseFirestore firestore;
-    private int appointmentIndex = 0;
 
     public async UniTask Init()
     {

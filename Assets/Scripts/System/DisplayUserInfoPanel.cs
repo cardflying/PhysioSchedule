@@ -93,7 +93,7 @@ public class DisplayUserInfoPanel : PanelSystem
                 });
                 break;
             case Mode.load:
-                DeserializeData(split[1]);
+                DeserializeClientData(split[1]);
                 _editButton.gameObject.SetActive(true);
                 _editButton.onClick.AddListener(EditClient);
                 _sessionButton.gameObject.SetActive(true);
@@ -173,7 +173,11 @@ public class DisplayUserInfoPanel : PanelSystem
         _sessionButton.onClick.RemoveAllListeners();
     }
 
-    private void DeserializeData(string data)
+    /// <summary>
+    /// Deserialize data and place into field
+    /// </summary>
+    /// <param name="data"></param>
+    private void DeserializeClientData(string data)
     {
         _clientData = JsonConvert.DeserializeObject<ClientData>(data);
         Debug.Log(_clientData.Name);
