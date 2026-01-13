@@ -107,7 +107,6 @@ public class LoadUserPanel : PanelSystem
         if (sceneTriggerCallback != null)
         {
             var item = SerializeData(currentClientList[index]);
-            Debug.Log(item);
             sceneTriggerCallback(panelSystemList[1], "1_" + item);
         }
     } 

@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using static SessionPanel;
+using ColorUtility = UnityEngine.ColorUtility;
 
 public class NotePanel : PanelSystem
 {
@@ -17,9 +19,14 @@ public class NotePanel : PanelSystem
     [SerializeField]
     private Drawing _drawing;
 
+    private ClientData _clientData;
     private NoteUI newNoteUI;
+    private int sessionIndex;
+    private int noteIndex = -1;
+    private SessionNote newSessionNote;
     private List<NoteUI> noteUIList = new List<NoteUI>();
     private List<NoteUI> noteUIPool = new List<NoteUI>();
+    private List<SessionNote> sessionNotes = new List<SessionNote>();
 
     private Action<PanelSystem, string> sceneTriggerCallback;
 
@@ -32,6 +39,11 @@ public class NotePanel : PanelSystem
 
     public override void SetData(string data)
     {
+        string[] rawData = data.Split('|');
+        _clientData = DeserializeData<ClientData>(rawData[1]);
+
+        if (int.TryParse(rawData[0], out sessionIndex))
+            GetSessionNote();
     }
 
     public override void Show()
@@ -42,13 +54,13 @@ public class NotePanel : PanelSystem
         {
             if (sceneTriggerCallback != null)
             {
-                sceneTriggerCallback(panelSystemList[0], null);
+                sceneTriggerCallback(panelSystemList[0], SerializeData(_clientData));
             }
         });
         _addNoteUIButton.onClick.AddListener(() => CreateNoteUI(Color.white));
 
         _drawing.Enable();
-        _drawing.drawStrokeTrigger += CreateNoteUI; 
+        _drawing.drawStrokeTrigger += (w,x,y,z) => CreateNoteUI(w,x,y,z); 
     }
 
     public override void Hide()
@@ -58,10 +70,21 @@ public class NotePanel : PanelSystem
         _addNoteUIButton.onClick.RemoveAllListeners();
 
         _drawing.Disable();
-        _drawing.drawStrokeTrigger -= CreateNoteUI;
+        _drawing.drawStrokeTrigger = null;
+
+        for (int i = 0; i< noteUIList.Count; i++)
+        {
+            noteUIList[i].ResetData();
+            noteUIPool.Add(noteUIList[i]);
+        }
+        noteUIList.Clear();
+        sessionNotes.Clear();
+
+        sessionIndex = -1;
+        noteIndex = -1;
     }
 
-    private void CreateNoteUI(Color color)
+    private int CreateNoteUI(Color color, string date = null, string description = null, StrokeData strokeData = null)
     {
         if (noteUIPool.Count > 0)
         {
@@ -72,42 +95,104 @@ public class NotePanel : PanelSystem
         {
             newNoteUI = Instantiate(_noteUIPrefab, _noteUIContainer);
         }
-        newNoteUI.Init(color);
+        noteIndex++;
+        newNoteUI.Init(noteIndex, color, date, description, (x,y,z) => SetSessionNote(x,y,z,strokeData));
         newNoteUI.transform.SetAsFirstSibling();
         newNoteUI.deleteCallback += RemoveNoteUI;
 
         noteUIList.Add(newNoteUI);
 
-        RectTransform ySize = noteUIList[0].GetComponent<RectTransform>();
-        VerticalLayoutGroup gap = _noteUIContainer.GetComponent<VerticalLayoutGroup>();
-        ScaleRectTransform(_noteUIContainer, (ySize.sizeDelta.y + gap.spacing), Vector3.up);
+        _noteUIContainer.anchoredPosition = Vector2.zero;
+
+        return noteIndex;
     }
 
+    /// <summary>
+    /// Remove NoteUI and stroke
+    /// </summary>
+    /// <param name="target"></param>
     private void RemoveNoteUI(GameObject target)
     {
         NoteUI noteUI = target.GetComponent<NoteUI>();
         _drawing.RemoveStroke(noteUI.GetBgColor());
 
-        RectTransform ySize = noteUIList[0].GetComponent<RectTransform>();
-        VerticalLayoutGroup gap = _noteUIContainer.GetComponent<VerticalLayoutGroup>();
-
-        for (int i = 0; i < noteUIList.Count; i++)
+        for (int i = 0; i < sessionNotes[sessionIndex].notes.Count; i++)
         {
-            if (noteUIList[i].gameObject == target)
+            if (sessionNotes[sessionIndex].notes[i].id == noteUI.GetId())
             {
-                noteUIList[i].ResetData();
-                noteUIPool.Add(noteUIList[i]);
-                noteUIList.RemoveAt(i);
+                sessionNotes[sessionIndex].notes.RemoveAt(i);
+                _clientData.SessionNote = ConvertSessionNoteToString(sessionNotes);
             }
         }
-        ScaleRectTransform(_noteUIContainer, (ySize.sizeDelta.y + gap.spacing), Vector3.up);
+
+        noteUI.ResetData();
+        noteUIPool.Add(noteUI);
+        noteUIList.Remove(noteUI);
     }
 
-    private void ScaleRectTransform(RectTransform target, float amount, Vector3 axis)
+    private void GetSessionNote()
     {
-        if (axis == Vector3.up || axis == Vector3.down)
-            target.sizeDelta = new Vector2(target.sizeDelta.x, amount * noteUIList.Count + 140);
-        if (axis == Vector3.left || axis == Vector3.right)
-            target.sizeDelta = new Vector2(amount * noteUIList.Count, target.sizeDelta.y);
+        sessionNotes = ConvertDataToSessionNote(_clientData.SessionNote);
+
+        if (sessionIndex < sessionNotes.Count)
+        {
+            for (int i = 0; i < sessionNotes[sessionIndex].notes.Count; i++)
+            {
+                Note newNote = sessionNotes[sessionIndex].notes[i];
+                
+                Color newColor = Color.white;
+
+                //Draw stroke
+                if (newNote.strokeData != null)
+                {
+                    ColorUtility.TryParseHtmlString("#"+newNote.strokeData.color, out newColor);
+                    _drawing.CreateLine(newColor, newNote.strokeData);
+                }
+
+                //Create NoteUI
+                newNote.id = CreateNoteUI(newColor, sessionNotes[sessionIndex].sessionDate, newNote.noteText);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Save date, data, and stroke into _clientData
+    /// </summary>
+    /// <param name="date"></param>
+    /// <param name="data"></param>
+    /// <param name="strokeData"></param>
+    private void SetSessionNote(int id, string date, string data, StrokeData strokeData)
+    {
+        Note newNote = new Note();
+        newNote.noteText = data;
+        newNote.strokeData = strokeData;
+
+        if (sessionNotes.Count == 0)
+        {
+            newNote.id = id;
+
+            newSessionNote = new SessionNote();
+            newSessionNote.sessionDate = date;
+            newSessionNote.notes.Add(newNote);
+            sessionNotes.Add(newSessionNote);
+
+        }
+        else
+        {
+            newSessionNote = sessionNotes[sessionIndex];
+
+            int noteIndex = newSessionNote.GetSessionNoteIndex(id);
+
+            if (noteIndex != -1)
+            {
+                newSessionNote.notes[noteIndex].noteText = data;
+            }
+            else
+            {
+                newNote.id = id;
+                newSessionNote.notes.Add(newNote);
+            }
+        }
+        _clientData.SessionNote = ConvertSessionNoteToString(sessionNotes);
     }
 }

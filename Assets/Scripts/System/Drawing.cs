@@ -26,7 +26,7 @@ public class Drawing : MonoBehaviour
     private const float MinValue = 0.25f;
     private const float MaxValue = 0.6f;
 
-    public Action<Color> drawStrokeTrigger;
+    public Action<Color,string,string,StrokeData> drawStrokeTrigger;
 
     public void Enable()
     {
@@ -38,9 +38,11 @@ public class Drawing : MonoBehaviour
 
         foreach (var strokeObj in strokes.Values)
         {
+            strokeObj.ResetStoke();
             strokeObj.gameObject.SetActive(false);
             strokesPool.Add(strokeObj);
         }
+        strokes.Clear();
         usedColors.Clear();
     }
 
@@ -99,11 +101,29 @@ public class Drawing : MonoBehaviour
 
     void EndLine()
     {
+        if (drawStrokeTrigger != null)
+            drawStrokeTrigger(currentColor, null, null, currentStroke.EndPoint());
+
         currentStroke = null;
         drawing = false;
-        
-        if (drawStrokeTrigger != null)
-            drawStrokeTrigger(currentColor);
+    }
+
+    public void CreateLine(Color color, StrokeData strokeData)
+    {
+        if (strokesPool.Count > 0)
+        {
+            currentStroke = strokesPool[0];
+            currentStroke.gameObject.SetActive(true);
+            strokesPool.RemoveAt(0);
+        }
+        else
+        {
+            currentStroke = Instantiate(strokePrefab, transform);
+        }
+        strokes.Add(color, currentStroke);
+        currentStroke.SetStrokeColor(color);
+
+        currentStroke.AddPoint(strokeData.GetLinePoint().ToArray());
     }
 
     // =========================
@@ -159,6 +179,7 @@ public class Drawing : MonoBehaviour
         return color;
     }
 
+    //Remove Stroke based on the color
     public void RemoveStroke(Color color)
     {
         if (strokes.ContainsKey(color))
@@ -169,7 +190,5 @@ public class Drawing : MonoBehaviour
             strokesPool.Add(selectStroke);
             strokes.Remove(color);
         }
-
-        Debug.Log(usedColors.Contains(color));
     }
 }

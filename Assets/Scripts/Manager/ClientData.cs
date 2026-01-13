@@ -1,5 +1,8 @@
 using Firebase.Firestore;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 [FirestoreData,Serializable]
 public class ClientData
@@ -21,6 +24,7 @@ public class ClientData
     private int EmergencyNumber = 987654321;
     private string EmergencyRelationship = "Friend";
     private int UserSession = 0;
+    private string UserSessionNote = "";
 
     [FirestoreProperty]
     public string Name { get { return UserName; } set { UserName = value; } }
@@ -51,6 +55,8 @@ public class ClientData
     [FirestoreProperty]
     public int Session { get { return UserSession; } set { UserSession = value; } }
     [FirestoreProperty]
+    public string SessionNote { get { return UserSessionNote; } set { UserSessionNote = value; } }
+    [FirestoreProperty]
     public string EmergencyContactName { get { return EmergencyName; } set { EmergencyName = value; } }
     [FirestoreProperty]
     public int EmergencyContactNumber { get { return EmergencyNumber; } set { EmergencyNumber = value; } }
@@ -69,6 +75,52 @@ public class AppointmentData
     public Timestamp Date { get { return AppointmentDate; } set { AppointmentDate = value; } }
     [FirestoreProperty]
     public string IC { get { return UserIC; } set { UserIC = value; } }
+}
+
+[Serializable]
+public class Note
+{
+    public int id;
+    public string noteText;
+    public StrokeData strokeData;
+}
+
+
+[Serializable]
+public class StrokeData
+{
+    public string color;                    // HEX
+    public float thickness;
+    public List<Vec3Data> linePoints = new();
+
+    public List<Vector3> GetLinePoint()
+    {
+        List<Vector3> newLinePoints = new();
+
+        for (int i = 0; i < linePoints.Count; i++)
+        {
+            newLinePoints.Add(new Vector3(linePoints[i].x, linePoints[i].y, linePoints[i].z));
+        }
+
+        return newLinePoints;
+    }
+}
+
+[Serializable]
+public struct Vec3Data
+{
+    public float x;
+    public float y;
+    public float z;
+
+    public Vec3Data(Vector3 v)
+    {
+        x = v.x;
+        y = v.y;
+        z = v.z;
+    }
+
+    public Vector3 ToVector3() => new Vector3(x, y, z);
 }
 
 public enum UserCondition

@@ -38,7 +38,7 @@ public class PackagePanel : PanelSystem
 
     public override void SetData(string data)
     {
-        _updateClientData = DeserializeData(data);
+        _updateClientData = DeserializeData<ClientData>(data);
     }
 
     public override void Show()

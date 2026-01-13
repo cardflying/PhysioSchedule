@@ -32,12 +32,12 @@ public class PanelSystem : MonoBehaviour
         
     }
 
-    protected ClientData DeserializeData(string data)
+    protected T DeserializeData<T>(string data)
     {
-        return JsonConvert.DeserializeObject<ClientData>(data);
+        return JsonConvert.DeserializeObject<T>(data);
     }
 
-    protected string SerializeData(ClientData data)
+    protected string SerializeData<T>(T data)
     {
         return JsonConvert.SerializeObject(data);
     }

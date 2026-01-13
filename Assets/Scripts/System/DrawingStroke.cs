@@ -1,21 +1,18 @@
-using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
-[RequireComponent(typeof(EdgeCollider2D))]
 public class DrawingStroke : MonoBehaviour
 {
-    private LineRenderer line;
-    private EdgeCollider2D edge;
-    private List<Vector2> colliderPoints = new List<Vector2>();
+    private LineRenderer strokeLine;
+    private Color strokeColor;
 
     public float minPointDistance = 0.05f; // Minimum distance between points
     public float lineThickness = 0.05f;       // Optional: make collider thicker
 
     void Awake()
     {
-        line = GetComponent<LineRenderer>();
-        edge = GetComponent<EdgeCollider2D>();
+        strokeLine = GetComponent<LineRenderer>();
 
         ResetStoke();
     }
@@ -23,46 +20,47 @@ public class DrawingStroke : MonoBehaviour
     // Add a point to the line and update collider
     public void AddPoint(Vector3 worldPos)
     {
-        if (line.positionCount > 0)
+        if (strokeLine.positionCount > 0)
         {
-            Vector3 last = line.GetPosition(line.positionCount - 1);
+            Vector3 last = strokeLine.GetPosition(strokeLine.positionCount - 1);
             if (Vector3.Distance(last, worldPos) < minPointDistance)
                 return;
         }
 
         // LineRenderer
-        line.positionCount++;
-        line.SetPosition(line.positionCount - 1, worldPos);
-
-        // EdgeCollider2D (LOCAL SPACE!)
-        colliderPoints.Add(transform.InverseTransformPoint(worldPos));
-        edge.SetPoints(colliderPoints);
+        strokeLine.positionCount++;
+        strokeLine.SetPosition(strokeLine.positionCount - 1, worldPos);
     }
 
-    // Check if the mouse/touch hits this stroke
-    public bool HitTest(Vector2 worldPos)
+    public void AddPoint(Vector3[] pointList)
     {
-        // Raycast against collider
-        RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
+        strokeLine.positionCount = pointList.Length;
+        strokeLine.SetPositions(pointList);
+    }
 
-        Debug.Log(hit.collider);
-        if (hit.collider == edge)
-            return true;
+    public StrokeData EndPoint()
+    {
+        StrokeData currentStrokeData = new StrokeData();
+        currentStrokeData.color = strokeColor.ToHexString();
+        currentStrokeData.thickness = lineThickness;
 
-        return false;
+        for (int i = 0; i < strokeLine.positionCount; i++)
+            currentStrokeData.linePoints.Add(new Vec3Data(strokeLine.GetPosition(i)));
+
+        return currentStrokeData;
     }
 
     public void SetStrokeColor(Color color)
     {
-        line.startColor = color;
-        line.endColor = color;
+        strokeColor = color;
+
+        strokeLine.startColor = color;
+        strokeLine.endColor = color;
     }
 
     public void ResetStoke()
     {
-        line.startWidth = line.endWidth = lineThickness;
-        line.positionCount = 0;
-        edge.points = new Vector2[0];
-        edge.edgeRadius = lineThickness / 2.0f;
+        strokeLine.startWidth = strokeLine.endWidth = lineThickness;
+        strokeLine.positionCount = 0;
     }
 }

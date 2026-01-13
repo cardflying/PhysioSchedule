@@ -180,7 +180,6 @@ public class DisplayUserInfoPanel : PanelSystem
     private void DeserializeClientData(string data)
     {
         _clientData = JsonConvert.DeserializeObject<ClientData>(data);
-        Debug.Log(_clientData.Name);
         _nameInputField.text = _clientData.Name;
         _icInputField.text = _clientData.IC;
         _dobCalendarButton.GetComponentInChildren<TMP_Text>().text = _clientData.DOB;
