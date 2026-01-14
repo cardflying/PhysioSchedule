@@ -10,6 +10,7 @@ public class FirebaseSystem : MonoBehaviour
 {
     private FirebaseFirestore firestore;
     private FirebaseAuth firebaseAuth;
+    private DocumentReference docRef;
 
     public async UniTask Init()
     {
@@ -51,18 +52,13 @@ public class FirebaseSystem : MonoBehaviour
     {
         try
         {
-            Query query = firestore.Collection("client_data");
-            AggregateQuery countQuery = query.Count;
+            if (firebaseAuth == null || firestore == null)
+                throw new Exception("Firebase not initialized");
 
-            AggregateQuerySnapshot snapshot = await countQuery.GetSnapshotAsync(AggregateSource.Server);
-            long totalPlayers = snapshot.Count;
+            if (firebaseAuth.CurrentUser == null)
+                throw new Exception("User not authenticated");
 
-            // 2. Save client data (auto ID)
-            DocumentReference docRef = firestore.Collection("client_data/").Document((totalPlayers++).ToString());
-
-            await docRef.SetAsync(clientData);
-
-            //Debug.Log("Client data saved successfully");
+            await firestore.Collection("client_data").AddAsync(clientData);
         }
         catch (System.Exception ex)
         {
@@ -87,6 +83,7 @@ public class FirebaseSystem : MonoBehaviour
                 if (!doc.Exists) continue;
 
                 ClientData data = doc.ConvertTo<ClientData>();
+                data.DocumentId = doc.Id;
                 players.Add(data);
             }
 
@@ -109,29 +106,23 @@ public class FirebaseSystem : MonoBehaviour
     {
         try
         {
-            Query query = firestore.Collection("client_data").WhereEqualTo("IC", clientData.IC);
-            
-            QuerySnapshot snapshot = await query.GetSnapshotAsync();
-
-            if (snapshot.Count > 0)
+            if (string.IsNullOrEmpty(clientData.DocumentId))
             {
-                DocumentReference clientDoc = null;
-                using (var enumerator = snapshot.Documents.GetEnumerator())
-                {
-                    if (enumerator.MoveNext())
-                    {
-                        clientDoc = enumerator.Current.Reference;
-                    }
-                }
-                if (clientDoc != null)
-                {
-                    await clientDoc.SetAsync(clientData, SetOptions.MergeAll);
-                }
+                Debug.LogError("Cannot update client data: DocumentId is missing.");
+                return;
             }
+
+            // Directly update using DocumentId
+            await firestore
+                .Collection("client_data")
+                .Document(clientData.DocumentId)
+                .SetAsync(clientData, SetOptions.MergeAll);
+
+            Debug.Log($"Updated client data: {clientData.DocumentId}");
         }
         catch (System.Exception ex)
         {
-            Debug.LogError("SaveClientDataToCloud failed: " + ex);
+            Debug.LogError("UpdateClientDataInCloud failed: " + ex);
         }
     }
 
@@ -140,11 +131,11 @@ public class FirebaseSystem : MonoBehaviour
     /// </summary>
     /// <param name="appointmentData"></param>
     /// <returns></returns>
-    public async UniTask BookAppointment(AppointmentData appointmentData)
+    public async UniTask<string> BookAppointment(AppointmentData appointmentData)
     {
         try
         {
-            DocumentReference docRef = firestore.Collection("appointment_data").Document();
+            docRef = firestore.Collection("appointment_data").Document();
 
             await docRef.SetAsync(appointmentData);
 
@@ -154,6 +145,8 @@ public class FirebaseSystem : MonoBehaviour
         {
             Debug.LogError("SaveClientDataToCloud failed: " + ex);
         }
+
+        return docRef.Id;
     }
 
     /// <summary>
@@ -163,22 +156,15 @@ public class FirebaseSystem : MonoBehaviour
     /// <returns></returns>
     public async UniTask CancelAppointment(AppointmentData appointmentData)
     {
+        if (string.IsNullOrEmpty(appointmentData.DocumentId))
+        {
+            Debug.LogError("CancelAppointment failed: DocumentId is null or empty");
+            return;
+        }
+
         try
         {
-            Query query = firestore.Collection("appointment_data")
-                                   .WhereEqualTo("IC", appointmentData.IC)
-                                   .WhereEqualTo("Date", appointmentData.Date); // Ensure correct type
-
-            QuerySnapshot snapshot = await query.GetSnapshotAsync();
-
-            foreach (var doc in snapshot.Documents)
-            {
-                AppointmentData data = doc.ConvertTo<AppointmentData>();
-                //Debug.Log($"Deleting document {doc.Id} with IC: {data.IC} and date:{data.Date}");
-
-                await doc.Reference.DeleteAsync();
-                //Debug.Log($"Deleted document {doc}");
-            }
+            await firestore.Collection("appointment_data").Document(appointmentData.DocumentId).DeleteAsync();
         }
         catch (System.Exception e)
         {
@@ -214,6 +200,7 @@ public class FirebaseSystem : MonoBehaviour
                 if (!doc.Exists) continue;
 
                 AppointmentData data = doc.ConvertTo<AppointmentData>();
+                data.DocumentId = doc.Id;
                 appointment.Add(data);
             }
         }

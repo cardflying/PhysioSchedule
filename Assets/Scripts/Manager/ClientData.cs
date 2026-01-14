@@ -1,5 +1,4 @@
 using Firebase.Firestore;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,67 +6,91 @@ using UnityEngine;
 [FirestoreData,Serializable]
 public class ClientData
 {
+    public string DocumentId { get; set; }
+
     private string UserName = "test";
     private int UserAge = 100;
     private string UserIC = "ABC123";
     private string Occupation = "Warrior";
     private string DateOfBirth;
-    private Int32 UserGender = 0;
+    private int UserGender = 0;
     private string MaritalStatus = "Single";
     private string Nationality = "Unknown";
-    private int HandphoneNumber = 1234567890;
+    private string HandphoneNumber = "1234567890";
     private string EmailAddress = "";
     private string ResidentialAddress = "";
-    private Int32 Langauge = 0;
-    private Int32 UserCondition = 0;
+    private int Language = 0;
+    private int UserCondition = 0;
     private string EmergencyName = "Emergency";
-    private int EmergencyNumber = 987654321;
+    private string EmergencyNumber = "987654321";
     private string EmergencyRelationship = "Friend";
     private int UserSession = 0;
     private string UserSessionNote = "";
 
-    [FirestoreProperty]
-    public string Name { get { return UserName; } set { UserName = value; } }
-    [FirestoreProperty]
-    public int Age { get { return UserAge; } set { UserAge = value; } }
-    [FirestoreProperty]
-    public string IC { get { return UserIC; } set { UserIC = value; } }
-    [FirestoreProperty]
-    public string Job { get { return Occupation; } set { Occupation = value; } }
-    [FirestoreProperty]
-    public string DOB { get { return DateOfBirth; } set { DateOfBirth = value; } }
-    [FirestoreProperty]
-    public Int32 Gender { get { return UserGender; } set { UserGender = value; } }
-    [FirestoreProperty]
-    public string Status { get { return MaritalStatus; } set { MaritalStatus = value; } }
-    [FirestoreProperty]
-    public string Country { get { return Nationality; } set { Nationality = value; } }
-    [FirestoreProperty]
-    public int Phone { get { return HandphoneNumber; } set { HandphoneNumber = value; } }
-    [FirestoreProperty]
-    public string Email { get { return EmailAddress; } set { EmailAddress = value; } }
-    [FirestoreProperty]
-    public string Address { get { return ResidentialAddress; } set { ResidentialAddress = value; } }
-    [FirestoreProperty]
-    public Int32 Language { get { return Langauge; } set { Langauge = value; } }
-    [FirestoreProperty]
-    public Int32 Condition { get { return UserCondition; } set { UserCondition = value; } }
-    [FirestoreProperty]
-    public int Session { get { return UserSession; } set { UserSession = value; } }
-    [FirestoreProperty]
-    public string SessionNote { get { return UserSessionNote; } set { UserSessionNote = value; } }
-    [FirestoreProperty]
-    public string EmergencyContactName { get { return EmergencyName; } set { EmergencyName = value; } }
-    [FirestoreProperty]
-    public int EmergencyContactNumber { get { return EmergencyNumber; } set { EmergencyNumber = value; } }
-    [FirestoreProperty]
-    public string EmergencyContactRelationship { get { return EmergencyRelationship; } set { EmergencyRelationship = value; } }
+    [FirestoreProperty("name")]
+    public string Name { get => UserName; set => UserName = value; }
+
+    [FirestoreProperty("age")]
+    public int Age { get => UserAge; set => UserAge = value; }
+
+    [FirestoreProperty("ic")]
+    public string IC { get => UserIC; set => UserIC = value; }
+
+    [FirestoreProperty("job")]
+    public string Job { get => Occupation; set => Occupation = value; }
+
+    [FirestoreProperty("dob")]
+    public string DOB { get => DateOfBirth; set => DateOfBirth = value; }
+
+    [FirestoreProperty("gender")]
+    public int Gender { get => UserGender; set => UserGender = value; }
+
+    [FirestoreProperty("status")]
+    public string Status { get => MaritalStatus; set => MaritalStatus = value; }
+
+    [FirestoreProperty("country")]
+    public string Country { get => Nationality; set => Nationality = value; }
+
+    [FirestoreProperty("phone")]
+    public string Phone { get => HandphoneNumber; set => HandphoneNumber = value; }
+
+    [FirestoreProperty("email")]
+    public string Email { get => EmailAddress; set => EmailAddress = value; }
+
+    [FirestoreProperty("address")]
+    public string Address { get => ResidentialAddress; set => ResidentialAddress = value; }
+
+    [FirestoreProperty("language")]
+    public int LanguageCode { get => Language; set => Language = value; }
+
+    [FirestoreProperty("condition")]
+    public int Condition { get => UserCondition; set => UserCondition = value; }
+
+    [FirestoreProperty("session")]
+    public int Session { get => UserSession; set => UserSession = value; }
+
+    [FirestoreProperty("sessionNote")]
+    public string SessionNote { get => UserSessionNote; set => UserSessionNote = value; }
+
+    [FirestoreProperty("emergencyName")]
+    public string EmergencyContactName { get => EmergencyName; set => EmergencyName = value; }
+
+    [FirestoreProperty("emergencyNumber")]
+    public string EmergencyContactNumber { get => EmergencyNumber; set => EmergencyNumber = value; }
+
+    [FirestoreProperty("emergencyRelationship")]
+    public string EmergencyContactRelationship
+    {
+        get => EmergencyRelationship;
+        set => EmergencyRelationship = value;
+    }
 }
 
 
 [FirestoreData, Serializable]
 public class AppointmentData
 {
+    public string DocumentId { get; set; }
     private Timestamp AppointmentDate;
     private string UserIC = "ABC1";
 
@@ -75,6 +98,7 @@ public class AppointmentData
     public Timestamp Date { get { return AppointmentDate; } set { AppointmentDate = value; } }
     [FirestoreProperty]
     public string IC { get { return UserIC; } set { UserIC = value; } }
+
 }
 
 [Serializable]

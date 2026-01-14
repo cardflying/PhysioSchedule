@@ -27,7 +27,7 @@ public class ProgramSystem : MonoBehaviour
                                     _calendarController,
                                     ChangePanel);
         await _appointmentPanel.Init(_firebaseSystem.LoadClientDataFromCloud,
-                                    (x) => _firebaseSystem.BookAppointment(x).Forget(),
+                                    _firebaseSystem.BookAppointment,
                                     (x) => _firebaseSystem.CancelAppointment(x).Forget(),
                                     _firebaseSystem.GetAppointmentList,
                                     _calendarController,

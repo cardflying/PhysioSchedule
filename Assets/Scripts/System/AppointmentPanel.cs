@@ -29,19 +29,19 @@ public class AppointmentPanel : PanelSystem
     private Button _bookedClientButton;
 
     private List<ClientData> clientList = new List<ClientData>();
-    [HideInInspector] private List<AppointmentData> appointmentListOnDate = new List<AppointmentData>();
+    private List<AppointmentData> appointmentListOnDate = new List<AppointmentData>();
     private Dictionary<int,Button> timeButtonDic = new Dictionary<int, Button>();
     private Dictionary<int,Button> bookedClientButtonDic = new Dictionary<int,Button>();
     private List<Button> bookedClientButtonPoolList = new List<Button>();
     private AppointmentData appointmentData = new AppointmentData();
 
-    private Action<AppointmentData> bookAppointmentTriggerCallback;
+    private Func<AppointmentData, UniTask<string>> bookAppointmentTriggerCallback;
     private Action<AppointmentData> cancelAppointmentTriggerCallback;
     private Func<AppointmentData, UniTask<List<AppointmentData>>> getAppointmentTriggerFunc;
     private Action<PanelSystem, string> sceneTriggerCallback;
     private Func<UniTask<List<ClientData>>> loadTriggerFunc;
 
-    public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Action<AppointmentData> bookAppointmentTrigger,
+    public async UniTask Init(Func<UniTask<List<ClientData>>> loadTrigger, Func<AppointmentData, UniTask<string>> bookAppointmentTrigger,
                               Action<AppointmentData> cancelAppointmentTrigger, Func<AppointmentData, UniTask<List<AppointmentData>>> getAppointmentTrigger, 
                               CalendarController calendar, Action<PanelSystem, string> sceneTrigger)
     {
@@ -142,6 +142,7 @@ public class AppointmentPanel : PanelSystem
 
         AppointmentData tempData = new AppointmentData
         {
+            DocumentId = appointmentData.DocumentId,
             IC = appointmentData.IC,
             Date = appointmentData.Date
         };
@@ -192,7 +193,7 @@ public class AppointmentPanel : PanelSystem
                 data.Value.onClick.RemoveAllListeners();
                 if (show)
                 {
-                    data.Value.onClick.AddListener(() => SummitAppointment(data.Key));
+                    data.Value.onClick.AddListener(() => SummitAppointment(data.Key).Forget());
                 }
             }
         }
@@ -202,7 +203,7 @@ public class AppointmentPanel : PanelSystem
             timeButtonDic[time].onClick.RemoveAllListeners();
             if (show)
             {
-                timeButtonDic[time].onClick.AddListener(() => SummitAppointment(time));
+                timeButtonDic[time].onClick.AddListener(() => SummitAppointment(time).Forget());
             }
         }
     }
@@ -239,7 +240,7 @@ public class AppointmentPanel : PanelSystem
     /// </summary>
     /// <param name="index"></param>
     /// <param name="time"></param>
-    private void SummitAppointment(int time)
+    private async UniTask SummitAppointment(int time)
     {
         if (nameListDropdown.captionText.text == "Select Client")
             return;
@@ -251,8 +252,6 @@ public class AppointmentPanel : PanelSystem
         appointmentData.Date = Timestamp.FromDateTime(newDateTime);
         ShowTimeButton(false, time);
 
-        CreateBookedAppointmentDate();
-
         if (appointmentListOnDate.Count == 0)
         {
             _calendar.HighlightSelectDay(_selectedDayObject, true);
@@ -261,8 +260,10 @@ public class AppointmentPanel : PanelSystem
 
         if (bookAppointmentTriggerCallback != null)
         {
-            bookAppointmentTriggerCallback(appointmentData);
+            appointmentData.DocumentId = await bookAppointmentTriggerCallback(appointmentData);
         }
+
+        CreateBookedAppointmentDate();
     }
 
     /// <summary>
@@ -272,11 +273,13 @@ public class AppointmentPanel : PanelSystem
     /// <param name="date"></param>
     private async void DisplayDate(int dayObject, DateTime date)
     {
-        if (string.IsNullOrEmpty(nameListDropdown.captionText.text))
-        {
-            nameListDropdown.captionText.text = "Select Client";
-            nameListDropdown.Select();
-        }
+        //if (string.IsNullOrEmpty(nameListDropdown.captionText.text))
+        //{
+        //    //nameListDropdown.captionText.text = "Select Client";
+        //    nameListDropdown.Select();
+        //}
+
+        SelectClient(0);
 
         AppointmentData newAppointment = new AppointmentData();
         newAppointment.Date = Timestamp.FromDateTime(date.ToLocalTime());
@@ -292,6 +295,7 @@ public class AppointmentPanel : PanelSystem
             for (int i = 0; i < appointmentListOnDate.Count; i++)
             {
                 appointmentData = new AppointmentData();
+                appointmentData.DocumentId = appointmentListOnDate[i].DocumentId;
                 appointmentData.IC = appointmentListOnDate[i].IC;
                 appointmentData.Date = appointmentListOnDate[i].Date;
                 ShowTimeButton(false, appointmentData.Date.ToDateTime().ToLocalTime().Hour);
@@ -335,6 +339,7 @@ public class AppointmentPanel : PanelSystem
     /// <param name="index"></param>
     private void SelectClient(int index)
     {
+        Debug.Log("CALL");
         nameListDropdown.captionText.text = nameListDropdown.options[index].text;
         nameListDropdown.Select();
     }

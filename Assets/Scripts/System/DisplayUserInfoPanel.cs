@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using System;
 using TMPro;
@@ -21,6 +22,8 @@ public class DisplayUserInfoPanel : PanelSystem
     private Button _editButton;
     [SerializeField]
     private Button _sessionButton;
+    [SerializeField]
+    private ConsentUI _consentUI;
 
     [SerializeField]
     private TMP_InputField _nameInputField;
@@ -57,6 +60,7 @@ public class DisplayUserInfoPanel : PanelSystem
 
     private ClientData _clientData;
     private CalendarController _calendar;
+    private int _consentComplete = -1;
 
     private Action<ClientData> summitTriggerAction;
     private Action<ClientData> editTriggerAction;
@@ -82,7 +86,7 @@ public class DisplayUserInfoPanel : PanelSystem
         {
             case Mode.register:
                 _summitButton.gameObject.SetActive(true);
-                _summitButton.onClick.AddListener(RegisterClient);
+                _summitButton.onClick.AddListener(() => RegisterClient().Forget());
                 
                 _closeButton.onClick.AddListener(() =>
                 {
@@ -166,6 +170,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _sessionButton.gameObject.SetActive(false);
         _summitButton.gameObject.SetActive(false);
         _editButton.gameObject.SetActive(false);
+        _consentComplete = -1;
 
         _summitButton.onClick.RemoveAllListeners();
         _closeButton.onClick.RemoveAllListeners();
@@ -191,24 +196,31 @@ public class DisplayUserInfoPanel : PanelSystem
         _emailInputField.text = _clientData.Email;
         _occupationInputField.text = _clientData.Job;
         _addressInputField.text = _clientData.Address;
-        _languageDropdown.value = _clientData.Language;
+        _languageDropdown.value = _clientData.LanguageCode;
         _conditionDropdown.value = _clientData.Condition;
     }
 
     /// <summary>
     /// create new client information
     /// </summary>
-    private void RegisterClient()
+    private async UniTask RegisterClient()
     {
-        if (summitTriggerAction != null)
-        {
-            summitTriggerAction(_clientData);
-        }
+        //_consentUI.Show(_clientData.Name, _clientData.Age, (x) => _consentComplete = x);
 
-        if (sceneTriggerAction != null)
-        {
-            sceneTriggerAction(panelSystemList[0], null);
-        }
+        //await UniTask.WaitUntil(() => _consentComplete != -1);
+
+        //if (_consentComplete == 1)
+        //{
+            if (summitTriggerAction != null)
+            {
+                summitTriggerAction(_clientData);
+            }
+
+            if (sceneTriggerAction != null)
+            {
+                sceneTriggerAction(panelSystemList[0], null);
+            }
+        //}
     }
 
     /// <summary>
@@ -282,7 +294,7 @@ public class DisplayUserInfoPanel : PanelSystem
     }
     public void ReceiveHP(string hp)
     {
-        _clientData.Phone = int.Parse(hp);
+        _clientData.Phone = hp;
     }
     public void ReceiveEmail(string email)
     {
@@ -298,7 +310,7 @@ public class DisplayUserInfoPanel : PanelSystem
     }
     public void ReceiveLanguage(Int32 language)
     {
-        _clientData.Language = language;
+        _clientData.LanguageCode = language;
     }
     public void ReceiveCondition(Int32 condition)
     {
@@ -314,6 +326,6 @@ public class DisplayUserInfoPanel : PanelSystem
     }
     public void ReceiveEmergencyContact(string contact)
     {
-        _clientData.EmergencyContactNumber = int.Parse(contact);
+        _clientData.EmergencyContactNumber = contact;
     }
 }
