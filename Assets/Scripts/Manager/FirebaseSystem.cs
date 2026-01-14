@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Firebase;
+using Firebase.Auth;
 using Firebase.Firestore;
 using System;
 using System.Collections.Generic;
@@ -8,19 +9,37 @@ using UnityEngine;
 public class FirebaseSystem : MonoBehaviour
 {
     private FirebaseFirestore firestore;
+    private FirebaseAuth firebaseAuth;
 
     public async UniTask Init()
     {
         var dependencyStatus = await FirebaseApp.CheckAndFixDependenciesAsync();
-        if (dependencyStatus == DependencyStatus.Available)
+        if (dependencyStatus != DependencyStatus.Available)
         {
-            firestore = FirebaseFirestore.DefaultInstance;
-            //Debug.Log("Firebase Firestore initialized");
+            Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+            return;
         }
-        else
+
+        firestore = FirebaseFirestore.DefaultInstance;
+
+        firebaseAuth = FirebaseAuth.DefaultInstance;
+
+        if (firebaseAuth.CurrentUser == null)
         {
-            Debug.LogError("Firebase dependencies not resolved");
+            try
+            {
+                await firebaseAuth.SignInAnonymouslyAsync();
+                Debug.Log("Signed in anonymously");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Anonymous sign-in failed: {e}");
+                return;
+            }
         }
+        
+        var user = firebaseAuth.CurrentUser;
+        //Debug.Log($"Firebase UID: {user.UserId}");
     }
 
     /// <summary>
@@ -213,32 +232,22 @@ public class FirebaseSystem : MonoBehaviour
     /// <returns></returns>
     public async UniTask<List<AppointmentData>> GetAppointmentList(DateTime date)
     {
+        if (firebaseAuth.CurrentUser == null)
+            await firebaseAuth.SignInAnonymouslyAsync();
+
         List<AppointmentData> appointment = new List<AppointmentData>();
 
-        try
-        {
-            DateTime startLocal = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Local);
+        DateTime startLocal = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Local);
+        DateTime endLocal = startLocal.AddMonths(1);
 
-            DateTime endLocal = startLocal.AddMonths(1);
-
-            Query query = firestore.Collection("appointment_data")
+        Query query = firestore.Collection("appointment_data")
             .WhereGreaterThanOrEqualTo("Date", Timestamp.FromDateTime(startLocal.ToUniversalTime()))
-            .WhereLessThan("Date",Timestamp.FromDateTime(endLocal.ToUniversalTime()));
+            .WhereLessThan("Date", Timestamp.FromDateTime(endLocal.ToUniversalTime()));
 
-            QuerySnapshot snapshot = await query.GetSnapshotAsync();
+        QuerySnapshot snapshot = await query.GetSnapshotAsync();
 
-            foreach (DocumentSnapshot doc in snapshot.Documents)
-            {
-                if (!doc.Exists) continue;
-
-                AppointmentData data = doc.ConvertTo<AppointmentData>();
-                appointment.Add(data);
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Firestore delete failed: {e}");
-        }
+        foreach (var doc in snapshot.Documents)
+            if (doc.Exists) appointment.Add(doc.ConvertTo<AppointmentData>());
 
         return appointment;
     }
