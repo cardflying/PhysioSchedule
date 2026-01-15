@@ -205,12 +205,12 @@ public class DisplayUserInfoPanel : PanelSystem
     /// </summary>
     private async UniTask RegisterClient()
     {
-        //_consentUI.Show(_clientData.Name, _clientData.Age, (x) => _consentComplete = x);
+        _consentUI.Show(_clientData.Name, _clientData.Age, (x) => _consentComplete = x);
 
-        //await UniTask.WaitUntil(() => _consentComplete != -1);
+        await UniTask.WaitUntil(() => _consentComplete != -1);
 
-        //if (_consentComplete == 1)
-        //{
+        if (_consentComplete == 1)
+        {
             if (summitTriggerAction != null)
             {
                 summitTriggerAction(_clientData);
@@ -220,7 +220,7 @@ public class DisplayUserInfoPanel : PanelSystem
             {
                 sceneTriggerAction(panelSystemList[0], null);
             }
-        //}
+        }
     }
 
     /// <summary>
