@@ -1,10 +1,7 @@
 using System;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AdaptivePerformance.Provider;
 using UnityEngine.UI;
-using static UnityEngine.LowLevelPhysics2D.PhysicsShape;
 
 public class ConsentUI : MonoBehaviour
 {
@@ -52,12 +49,12 @@ public class ConsentUI : MonoBehaviour
 
     private Action<int> completeTriggerCallback;
 
-    private void Start()
-    {
-        Show("Ddd", 5, null);
-    }
+    //private void Start()
+    //{
+    //    Show("Ddd", 5, null);
+    //}
 
-    public void Show(string name, int age, Action<int> completeCallback)
+    public void Show(string name, int age, string guardianName, string signature, bool showOnly, Action<int> completeCallback = null)
     {
         _names = name;
         if (age < 18)
@@ -65,15 +62,12 @@ public class ConsentUI : MonoBehaviour
             _underAge = true;
             _verticalLayoutGroup.spacing = 25;
 
-            _guardianNameInputfield.onEndEdit.AddListener(InsertGuardianName);
         }
         else
         {
             _underAge = false;
             _verticalLayoutGroup.spacing = 80;
         }
-
-        completeTriggerCallback = completeCallback;
 
         _canvasGroup.alpha = 1;
         _canvasGroup.interactable = true;
@@ -82,25 +76,55 @@ public class ConsentUI : MonoBehaviour
         UpdateAcknowledgement();
 
         _closeButton.onClick.AddListener(TriggerCloseConsentUI);
-        _signButton.onClick.AddListener(TriggerSigning);
+
+        if (showOnly == false)
+        {
+            _guardianNameInputfield.interactable = true;
+            _guardianNameInputfield.onEndEdit.AddListener(InsertGuardianName);
+            _signButton.onClick.AddListener(TriggerSigning);
+            completeTriggerCallback = completeCallback;
+        }
+        else
+        {
+            _guardianNameInputfield.interactable = false;
+            _guardianNameInputfield.text = guardianName;
+            _displaySignature.texture = GetTexture(signature);
+        }
     }
 
     private void Hide()
     {
         _names = "";
+        _personalConsent = "";
+        _guardianConsent = "";
+        _acknowledgementConsent = "";
+        _activitiesConsent = "";
+        _agreementConsent = "";
+        _signNameConsent = "";
+        _signDateConsent = "";
         _underAge = false;
+        _complete = false;
         _guardianName = false;
         _sign = false;
         completeTriggerCallback = null;
 
         _consentText.text = "";
         _guardianText.text = "";
+        _agreementText.text = "";
+        _activitiesText.text = "";
         _acknowledgementText.text = "";
+        _signNameText.text = "";
+        _signDateText.text = "";
         _canvasGroup.alpha = 0;
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
 
+        _displaySignature.texture = null;
+
+        _guardianNameInputfield.interactable = true;
+        _guardianNameInputfield.onEndEdit.RemoveAllListeners();
         _closeButton.onClick.RemoveAllListeners();
+        _signButton.onClick.RemoveAllListeners();
     }
 
     private void TriggerCloseConsentUI()
@@ -169,5 +193,34 @@ public class ConsentUI : MonoBehaviour
         _agreementText.text = _agreementConsent;
         _signNameText.text = _signNameConsent;
         _signDateText.text = _signDateConsent;
+    }
+
+    public string GetTextureString()
+    {
+        Texture2D texture2D = (Texture2D)_displaySignature.texture;
+
+        byte[] png = texture2D.EncodeToPNG();
+        string base64 = Convert.ToBase64String(png);
+
+        return base64;
+    }
+
+    public Texture2D GetTexture(string textureString)
+    {
+        if (string.IsNullOrEmpty(textureString))
+            return null;
+
+        byte[] imageBytes = Convert.FromBase64String(textureString);
+
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        texture.LoadImage(imageBytes); // auto-resizes texture
+        texture.Apply();
+
+        return texture;
+    }
+
+    public string GetGuardian()
+    {
+        return _guardianNameInputfield.text;
     }
 }

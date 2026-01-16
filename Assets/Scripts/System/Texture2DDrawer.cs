@@ -11,8 +11,8 @@ public class Texture2DDrawer : MonoBehaviour
     [SerializeField]
     private Button clearButton;
 
-    private int textureWidth = 1024;
-    private int textureHeight = 1024;
+    private int textureWidth = 512;
+    private int textureHeight = 256;
     private Color drawColor = Color.black;
     private int brushSize = 8;
     private bool eraseMode = false;
@@ -151,7 +151,7 @@ public class Texture2DDrawer : MonoBehaviour
         drawTexture.Apply();
     }
 
-    public void SendTexture()
+    private void SendTexture()
     {
         if (signatureCallback != null)
         {

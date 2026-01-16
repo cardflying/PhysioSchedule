@@ -26,6 +26,8 @@ public class ClientData
     private string EmergencyRelationship = "Friend";
     private int UserSession = 0;
     private string UserSessionNote = "";
+    private string GuardianName = "";
+    private string SignatureData = "";
 
     [FirestoreProperty("name")]
     public string Name { get => UserName; set => UserName = value; }
@@ -84,6 +86,11 @@ public class ClientData
         get => EmergencyRelationship;
         set => EmergencyRelationship = value;
     }
+
+    [FirestoreProperty("guardianName")]
+    public string Guardian { get => GuardianName; set => GuardianName = value; }
+    [FirestoreProperty("signatureData")]
+    public string Signature { get => SignatureData; set => SignatureData = value; }
 }
 
 

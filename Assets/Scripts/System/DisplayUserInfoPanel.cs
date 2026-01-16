@@ -23,6 +23,8 @@ public class DisplayUserInfoPanel : PanelSystem
     [SerializeField]
     private Button _sessionButton;
     [SerializeField]
+    private Button _showConsentFormButton;
+    [SerializeField]
     private ConsentUI _consentUI;
 
     [SerializeField]
@@ -100,6 +102,11 @@ public class DisplayUserInfoPanel : PanelSystem
                 DeserializeClientData(split[1]);
                 _editButton.gameObject.SetActive(true);
                 _editButton.onClick.AddListener(EditClient);
+                _showConsentFormButton.gameObject.SetActive(true);
+                _showConsentFormButton.onClick.AddListener(() =>
+                {
+                    _consentUI.Show(_clientData.Name, _clientData.Age, _clientData.Guardian, _clientData.Signature, true, null);
+                });
                 _sessionButton.gameObject.SetActive(true);
                 _sessionButton.onClick.AddListener(() =>
                 {
@@ -167,6 +174,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _calendar.dateTrigger -= DisplayDate;
         _calendar.HideCalendar();
 
+        _showConsentFormButton.gameObject.SetActive(false);
         _sessionButton.gameObject.SetActive(false);
         _summitButton.gameObject.SetActive(false);
         _editButton.gameObject.SetActive(false);
@@ -176,6 +184,7 @@ public class DisplayUserInfoPanel : PanelSystem
         _closeButton.onClick.RemoveAllListeners();
         _editButton.onClick.RemoveAllListeners();
         _sessionButton.onClick.RemoveAllListeners();
+        _showConsentFormButton.onClick.RemoveAllListeners();
     }
 
     /// <summary>
@@ -205,7 +214,7 @@ public class DisplayUserInfoPanel : PanelSystem
     /// </summary>
     private async UniTask RegisterClient()
     {
-        _consentUI.Show(_clientData.Name, _clientData.Age, (x) => _consentComplete = x);
+        _consentUI.Show(_clientData.Name, _clientData.Age, "", null, false, (x) => _consentComplete = x);
 
         await UniTask.WaitUntil(() => _consentComplete != -1);
 
@@ -213,6 +222,8 @@ public class DisplayUserInfoPanel : PanelSystem
         {
             if (summitTriggerAction != null)
             {
+                _clientData.Guardian = _consentUI.GetGuardian();
+                _clientData.Signature = _consentUI.GetTextureString();
                 summitTriggerAction(_clientData);
             }
 
